@@ -100,8 +100,9 @@ class DuneHDDevice(MediaPlayerDevice):
         self._source = player_state
 
         if player_state == 'standby':
+            self._media_title = 'standby'
             self._supported_features = DUNE_STANDBY
-            self._state = STATE_OFF
+            self._state = STATE_STANDBY
             return
 
         if player_state == 'navigator':
@@ -188,6 +189,14 @@ class DuneHDDevice(MediaPlayerDevice):
     @property
     def media_duration(self):
         return self._duration
+
+    @property
+    def state_attributes(self):
+        if self._state == STATE_STANDBY:
+            return None
+        if self._state == STATE_IDLE:
+            return None
+        return super().state_attributes
 
     def turn_off(self):
 #        _LOGGER.debug('turn_off')
