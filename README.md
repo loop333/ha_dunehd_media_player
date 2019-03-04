@@ -6,8 +6,8 @@ conf:
 
 ```
 media_player:
- - platform: dunehd
-    name: dunehd
-    host: 192.168.1.4
-    timeout: 20
+  - platform: dunehd
+     name: dunehd
+     host: 192.168.1.4
+     timeout: 20
 ```
