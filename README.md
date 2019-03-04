@@ -2,8 +2,7 @@ DuneHD Media Player Component for Home Assistant
 
 place in: .homeassistant/custom_components/dunehd/media_player.py  
 
-conf:  
-
+configuration.yaml:  
 ```
 media_player:
   - platform: dunehd
