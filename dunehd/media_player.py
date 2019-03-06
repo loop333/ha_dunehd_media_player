@@ -20,6 +20,7 @@ from homeassistant.const import (
     STATE_PAUSED, STATE_PLAYING, STATE_IDLE, STATE_STANDBY)
 import homeassistant.helpers.config_validation as cv
 from homeassistant.util import Throttle
+from homeassistant.util.dt import utcnow
 
 class mylogger():
     def debug(self, format, *args):
@@ -37,14 +38,16 @@ DEFAULT_TIMEOUT = 1
 URL = 'http://{}/cgi-bin/do?cmd={}&timeout={}'
 MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=30)
 
+STATE_NAVIGATOR = 'navigator'
+
 DUNE_PLAYING = SUPPORT_PAUSE | SUPPORT_VOLUME_SET | SUPPORT_VOLUME_MUTE | \
                SUPPORT_TURN_ON | SUPPORT_TURN_OFF | SUPPORT_SELECT_SOUND_MODE | \
                SUPPORT_SELECT_SOURCE | SUPPORT_PLAY | SUPPORT_PLAY_MEDIA | \
                SUPPORT_NEXT_TRACK | SUPPORT_PREVIOUS_TRACK | SUPPORT_STOP | SUPPORT_SEEK
 DUNE_NAVIGATOR = SUPPORT_TURN_OFF | SUPPORT_TURN_ON | SUPPORT_PLAY_MEDIA | \
                  SUPPORT_SELECT_SOURCE | SUPPORT_SELECT_SOUND_MODE
-DUNE_OFF = 0
-DUNE_STANDBY = SUPPORT_TURN_ON
+DUNE_OFF = SUPPORT_TURN_ON
+DUNE_IDLE = 0
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
@@ -77,6 +80,7 @@ class DuneHDDevice(MediaPlayerDevice):
         self._media_title = None
         self._position = None
         self._duration = None
+        self._position_updated = None
         self._supported_features = DUNE_OFF
 
     def send_command(self, command):
@@ -86,8 +90,8 @@ class DuneHDDevice(MediaPlayerDevice):
         try:
             resp = urllib.request.urlopen(url)
         except:
-            self._supported_features = DUNE_OFF
-            self._state = STATE_OFF
+            self._supported_features = DUNE_IDLE
+            self._state = STATE_IDLE
             return
         xml = ET.parse(resp)
 #        ET.dump(xml)
@@ -100,15 +104,15 @@ class DuneHDDevice(MediaPlayerDevice):
         self._source = player_state
 
         if player_state == 'standby':
-            self._media_title = 'standby'
-            self._supported_features = DUNE_STANDBY
-            self._state = STATE_STANDBY
+            self._media_title = 'off'
+            self._supported_features = DUNE_OFF
+            self._state = STATE_OFF
             return
 
         if player_state == 'navigator':
             self._media_title = 'navigator'
             self._supported_features = DUNE_NAVIGATOR
-            self._state = STATE_IDLE
+            self._state = STATE_NAVIGATOR
             return
 
         if player_state == 'file_playback':
@@ -126,11 +130,19 @@ class DuneHDDevice(MediaPlayerDevice):
             self._volume = int(param.get('playback_volume')) / 100
             self._duration = int(param.get('playback_duration'))
             self._position = int(param.get('playback_position'))
+            self._position_updated = utcnow()
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     def update(self):
 #        _LOGGER.debug('update')
         self.send_command('status')
+
+    @property
+    def is_on(self):
+#        _LOGGER.debug('is_on')
+        if self._state in [STATE_OFF, STATE_IDLE]:
+            return False
+        return True
 
     @property
     def name(self):
@@ -189,6 +201,10 @@ class DuneHDDevice(MediaPlayerDevice):
     @property
     def media_duration(self):
         return self._duration
+
+    @property
+    def media_position_updated_at(self):
+        return self._position_updated
 
     @property
     def state_attributes(self):
@@ -337,4 +353,4 @@ if __name__ == '__main__':
     print(dunehd.device_state_attributes)
     print(dir(dunehd))
 #    dunehd.set_volume_level(1)
-#    dunehd.mute_volume(0)
+    dunehd.mute_volume(0)
