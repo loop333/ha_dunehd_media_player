@@ -19,7 +19,6 @@ from homeassistant.const import (
     CONF_HOST, CONF_NAME, CONF_PORT, CONF_TIMEOUT, STATE_OFF, STATE_ON, STATE_UNKNOWN,
     STATE_PAUSED, STATE_PLAYING, STATE_IDLE, STATE_STANDBY)
 import homeassistant.helpers.config_validation as cv
-from homeassistant.util import Throttle
 from homeassistant.util.dt import utcnow
 
 class mylogger():
@@ -34,9 +33,9 @@ else:
     _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_NAME = 'dunehd'
-DEFAULT_TIMEOUT = 1
+DEFAULT_TIMEOUT = 20
 URL = 'http://{}/cgi-bin/do?cmd={}&timeout={}'
-MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=30)
+SCAN_INTERVAL = timedelta(seconds=30)
 
 STATE_NAVIGATOR = 'navigator'
 
@@ -132,7 +131,6 @@ class DuneHDDevice(MediaPlayerDevice):
             self._position = int(param.get('playback_position'))
             self._position_updated = utcnow()
 
-    @Throttle(MIN_TIME_BETWEEN_UPDATES)
     def update(self):
 #        _LOGGER.debug('update')
         self.send_command('status')
@@ -208,16 +206,14 @@ class DuneHDDevice(MediaPlayerDevice):
 
     @property
     def state_attributes(self):
-        if self._state == STATE_STANDBY:
-            return None
-        if self._state == STATE_IDLE:
+        if self._state in [STATE_IDLE, STATE_OFF, STATE_NAVIGATOR]:
             return None
         return super().state_attributes
 
     def turn_off(self):
 #        _LOGGER.debug('turn_off')
         self.send_command('standby')
-#        self.schedule_update_ha_state()
+        self.schedule_update_ha_state()
 
 #    def volume_up(self):
 #        _LOGGER.debug('volume_up')
@@ -233,27 +229,27 @@ class DuneHDDevice(MediaPlayerDevice):
     def set_volume_level(self, volume):
 #        _LOGGER.debug('set_volume_level %s', str(volume))
         self.send_command('set_playback_state&volume=' + str(int(volume*100)))
-#        self.schedule_update_ha_state()
+        self.schedule_update_ha_state()
 
     def mute_volume(self, mute):
 #        _LOGGER.debug('mute_volume')
         self.send_command('set_playback_state&mute=' + ('1' if mute else '0'))
-#        self.schedule_update_ha_state()
+        self.schedule_update_ha_state()
 
     def turn_on(self):
 #        _LOGGER.debug('turn_on')
         self.send_command('main_screen')
-#        self.schedule_update_ha_state()
+        self.schedule_update_ha_state()
 
     def media_stop(self):
 #        _LOGGER.debug('media_stop')
         self.send_command('main_screen')
-#        self.schedule_update_ha_state()
+        self.schedule_update_ha_state()
 
     def select_source(self, source):
-        self.send_command('open_path&url=' + source)
 #        _LOGGER.debug('select_source %s', source)
-#        self.schedule_update_ha_state()
+        self.send_command('open_path&url=' + source)
+        self.schedule_update_ha_state()
 
     def select_sound_mode(self, sound_mode):
 #        _LOGGER.debug('select_sound_mode %s', sound_mode)
@@ -263,31 +259,31 @@ class DuneHDDevice(MediaPlayerDevice):
     def play_media(self, media_type, media_id, **kwargs):
 #        _LOGGER.debug('play_media %s %s', media_type, media_id)
         self.send_command('launch_media_url&media_url=' + media_id)
-#        self.schedule_update_ha_state()
+        self.schedule_update_ha_state()
 
     def media_play(self):
 #        _LOGGER.debug('media_play')
         self.send_command('set_playback_state&speed=256')
-#        self.schedule_update_ha_state()
+        self.schedule_update_ha_state()
 
     def media_pause(self):
 #        _LOGGER.debug('media_pause')
         self.send_command('set_playback_state&speed=0')
-#        self.schedule_update_ha_state()
+        self.schedule_update_ha_state()
 
     def media_previous_track(self):
 #        _LOGGER.debug('media_previous_track')
-#        self.schedule_update_ha_state()
-        pass
+        self.send_command('ir_code&ir_code=B649BF00')
+        self.schedule_update_ha_state()
 
     def media_next_track(self):
 #        _LOGGER.debug('media_next_track')
-#        self.schedule_update_ha_state()
-        pass
+        self.send_command('ir_code&ir_code=E21DBF00')
+        self.schedule_update_ha_state()
 
     def media_seek(self, position):
         self.send_command('set_playback_state&position=' + str(position))
-#        self.schedule_update_ha_state()
+        self.schedule_update_ha_state()
 
 #    @property
 #    def media_channel(self):
