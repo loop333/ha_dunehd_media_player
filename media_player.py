@@ -9,7 +9,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 import os.path
 
-from homeassistant.components.media_player import (MediaPlayerDevice, PLATFORM_SCHEMA)
+from homeassistant.components.media_player import (MediaPlayerEntity, PLATFORM_SCHEMA)
 from homeassistant.components.media_player.const import (
     SUPPORT_PAUSE, SUPPORT_SELECT_SOURCE, SUPPORT_SELECT_SOUND_MODE, SUPPORT_STOP,
     SUPPORT_TURN_OFF, SUPPORT_TURN_ON, SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_SET, SUPPORT_VOLUME_STEP,
@@ -62,7 +62,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         config.get(CONF_TIMEOUT))
     add_entities([dunehd])
 
-class DuneHDDevice(MediaPlayerDevice):
+class DuneHDDevice(MediaPlayerEntity):
 
     def __init__(self, name, host, timeout):
 #        _LOGGER.debug('__init__')

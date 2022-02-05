@@ -1,6 +1,7 @@
 {
   "domain": "dunehd",
   "name": "dunehd",
+  "version": "0.0.1",
   "documentation": "https://github.com/loop333/ha_dunehd_media_player",
   "requirements": [],
   "dependencies": [],
